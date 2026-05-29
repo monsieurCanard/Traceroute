@@ -2,6 +2,7 @@
 #include "../includes/traceroute.h"
 
 bool g_exit_program = false;
+
 void set_exit_program(int sig)
 {
 	(void)sig;
@@ -32,5 +33,5 @@ int main(int ac, char** av)
 	}
 
 	print_start(&client);
-	// main_loop_icmp(&client);
+	main_loop(&client);
 }

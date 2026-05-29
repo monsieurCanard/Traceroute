@@ -67,21 +67,23 @@ typedef struct ping_counter
     int lost;
 } t_ping_counter;
 
-typedef struct icmp_packet
-{
-    int receive;
-} t_icmp_packet;
-
 typedef struct data_icmp
 {
     struct iphdr*   ip_header;
     struct icmphdr* data;
 } t_data_icmp;
 
+typedef struct icmp_packet
+{
+    struct icmphdr hdr;
+    char payload[PAYLOAD_SIZE];
+} t_icmp_packet;
+
 typedef struct traceroute_client
 {
     struct sockaddr_in sockaddr;
     t_icmp_packet*     packets;
+    fd_set             read_fds;
     
     char ips[3][INET_ADDRSTRLEN];
     double rtt[3];
@@ -91,29 +93,29 @@ typedef struct traceroute_client
     char* ip;
     int   seq;
     int   status;
-    fd_set             read_fds;
 } t_traceroute_client;
 
 /// * PARSING AND SETUP FUNCTIONS
 int parse_args(int ac, char** av);
 int create_client(t_traceroute_client* client, char* address);
-// /// * ICMP MESSAGE CREATION
-// int build_echo_request(t_ping_client* client, unsigned char* buff);
-// int icmp_checksum(unsigned char* buff, int len);
+
+int build_echo_request(t_traceroute_client* client, t_icmp_packet* packet);
+int icmp_checksum(unsigned char* buff, int len);
 
 // /// * MAIN LOOP AND HANDLERS
-// void  main_loop_icmp(t_ping_client* client);
-// float verify_response_and_print(t_ping_client* client,
+void  main_loop(t_traceroute_client* client);
+int send_message(t_traceroute_client* client, struct sockaddr_in sockaddr);
+// float verify_response_and_print(t_traceroute_client* client,
 //                                 unsigned char* buff,
 //                                 struct timeval recv_time);
 
-// int time_checker(t_ping_client*  client,
+// int time_checker(t_traceroute_client*  client,
 //                  struct timeval* start_time,
 //                  struct timeval* now,
 //                  struct timeval* send_time);
 
-// bool resend_packet(t_ping_client* client, struct timeval* now, struct timeval* time);
-// void handle_error_icmp(t_data_icmp icmp, t_ping_client* client);
+// bool resend_packet(t_traceroute_client* client, struct timeval* now, struct timeval* time);
+// void handle_error_icmp(t_data_icmp icmp, t_traceroute_client* client);
 // void update_client_time_stats(t_time_stats* time_stats, double new_rtt, int count);
 
 // /// * PRINTING FUNCTIONS
