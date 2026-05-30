@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <netdb.h>
+
 
 #define PAYLOAD_SIZE 32
 #define MAX_HOPS 30

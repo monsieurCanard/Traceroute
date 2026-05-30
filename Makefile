@@ -1,6 +1,6 @@
 NAME = traceroute
 
-CC_FLAGS = -Wall -Wextra -Werror -I includes/
+CC_FLAGS = -fsanitize=address -g3 -Wall -Wextra -Werror -I includes/
 
 SRC_DIR = src/
 

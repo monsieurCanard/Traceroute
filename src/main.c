@@ -34,4 +34,6 @@ int main(int ac, char** av)
 
 	print_start(&client);
 	main_loop(&client);
+	
+	return EXIT_SUCCESS;
 }

@@ -35,48 +35,36 @@ int icmp_checksum(unsigned char* buff, int len)
 
 int build_echo_request(t_traceroute_client* client, t_icmp_packet* packet)
 {
-		memset(&packet, 0, sizeof(packet));
+	memset(packet, 0, sizeof(&packet));
 
-		// Type du message ICMP
-		// 8 = Echo Request
-		// 0 = echo reply
-		packet->hdr.type = ICMP_ECHO;
+	packet->hdr.type = ICMP_ECHO;
 
-		// Precision du type ICMP
-		// Certains ICMP utilisent ce code pour preciser les evenements
-		packet->hdr.code = 0;
-		// Sert a verifier l'integrite du paquet
-		// On met juste 0 temporairement
-		packet->hdr.checksum = 0;
+	packet->hdr.code = 0;
+	packet->hdr.checksum = 0;
+	packet->hdr.un.echo.id = htons(getpid() & 0XFFFF);
+	packet->hdr.un.echo.sequence = htons(client->seq);
 
-		// Identifiant du paquet pour le programme
-		// On prend le pid du programme et on garde seulement les 16 bits de poids faible
-		// Htons convertit en network byte order pour eviter les problemes
-		packet->hdr.un.echo.id = htons(getpid() & 0XFFFF);
+	// On remplit le payload avec un timestamp
+	// if (PAYLOAD_SIZE < sizeof(struct timeval))
+	// {
+	// 	fprintf(stderr, "Payload size too small for timestamp\n");
+	// 	return (ERROR);
+	// }
+	
+	// struct timeval tv;
+	// gettimeofday(&tv, NULL);
+	// memcpy(packet->payload, &tv, sizeof(tv));
 
-		// Numero de sequence du paquet
-		// Si je devais envoyer plusieurs ping je pourrai incrementer cette valeur
-		packet->hdr.un.echo.sequence = htons(client->seq);
-		// On remplit le payload avec un timestamp
-		if (PAYLOAD_SIZE < sizeof(struct timeval))
-		{
-				fprintf(stderr, "Payload size too small for timestamp\n");
-				return (ERROR);
-		}
+	// client->packet[client->seq].send_time = tv;
+	// client->packet[client->seq].received  = false;
+	// On remplit le reste du payload avec des zeros
+	// for (int i = 8 + sizeof(tv); i < PAYLOAD_SIZE; ++i)
+	// {
+	// 		packet->payload[i] = 0;
+	// }
 
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		memcpy(packet->payload, &tv, sizeof(tv));
+	// On calcul la taille du paquets
+	packet->hdr.checksum = icmp_checksum((unsigned char*)packet, sizeof(struct icmphdr) + PAYLOAD_SIZE);
 
-		// client->packet[client->seq].send_time = tv;
-		// client->packet[client->seq].received  = false;
-		// On remplit le reste du payload avec des zeros
-		for (int i = 8 + sizeof(tv); i < 8 + 56; ++i)
-		{
-				packet->payload[i] = 0;
-		}
-
-		// On calcul la taille du paquets
-		packet->hdr.checksum = icmp_checksum((unsigned char*)packet, sizeof(struct icmphdr) + PAYLOAD_SIZE);
-		return PAYLOAD_SIZE + sizeof(struct icmphdr);
+	return PAYLOAD_SIZE + sizeof(struct icmphdr);
 }
