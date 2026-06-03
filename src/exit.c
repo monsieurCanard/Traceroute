@@ -2,17 +2,22 @@
 
 void exit_program(t_traceroute_client* client)
 {
-    if (client->fd > 0)
-    {
+	if (client->target_reached)
+	{
+		printf("%s Target reached with %d hops", client->name, client->current_hop);
+	}
 
-        // double success_rate =
-        //     msg_transmitted == 0
-        //         ? 0.0
-        //         : ((msg_transmitted - client->counter.received) / (double)msg_transmitted) * 100.0;
+	if (client->fd > 0)
+	{
 
-        // print_traceroute_final_stats(client, success_rate);
-        close(client->fd);
-    }
+		// double success_rate =
+		//     msg_transmitted == 0
+		//         ? 0.0
+		//         : ((msg_transmitted - client->counter.received) / (double)msg_transmitted) * 100.0;
 
-    exit(client->status);
+		// print_traceroute_final_stats(client, success_rate);
+		close(client->fd);
+	}
+
+	exit(client->status);
 }

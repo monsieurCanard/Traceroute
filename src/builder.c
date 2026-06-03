@@ -33,10 +33,8 @@ int icmp_checksum(unsigned char* buff, int len)
 		return htons(~sum);
 }
 
-int build_echo_request(t_traceroute_client* client, t_icmp_packet* packet)
+void build_echo_request(t_traceroute_client* client, t_icmp_packet* packet)
 {
-	memset(packet, 0, sizeof(&packet));
-
 	packet->hdr.type = ICMP_ECHO;
 
 	packet->hdr.code = 0;
@@ -44,27 +42,5 @@ int build_echo_request(t_traceroute_client* client, t_icmp_packet* packet)
 	packet->hdr.un.echo.id = htons(getpid() & 0XFFFF);
 	packet->hdr.un.echo.sequence = htons(client->seq);
 
-	// On remplit le payload avec un timestamp
-	// if (PAYLOAD_SIZE < sizeof(struct timeval))
-	// {
-	// 	fprintf(stderr, "Payload size too small for timestamp\n");
-	// 	return (ERROR);
-	// }
-	
-	// struct timeval tv;
-	// gettimeofday(&tv, NULL);
-	// memcpy(packet->payload, &tv, sizeof(tv));
-
-	// client->packet[client->seq].send_time = tv;
-	// client->packet[client->seq].received  = false;
-	// On remplit le reste du payload avec des zeros
-	// for (int i = 8 + sizeof(tv); i < PAYLOAD_SIZE; ++i)
-	// {
-	// 		packet->payload[i] = 0;
-	// }
-
-	// On calcul la taille du paquets
 	packet->hdr.checksum = icmp_checksum((unsigned char*)packet, sizeof(struct icmphdr) + PAYLOAD_SIZE);
-
-	return PAYLOAD_SIZE + sizeof(struct icmphdr);
 }

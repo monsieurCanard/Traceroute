@@ -43,5 +43,6 @@ int create_client(t_traceroute_client* client, char* address)
 		return (ERROR);
 
 	client->name = address;
+	client->target_reached = false;
 	return (SUCCESS);
 }

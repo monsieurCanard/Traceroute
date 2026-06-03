@@ -22,12 +22,13 @@
 
 #define PAYLOAD_SIZE 32
 #define MAX_HOPS 30
+#define MAX_ATTEMPTS 3
 
 
 
 #define RESEND 1
 
-#define TIMEOUT_SEC  5
+#define TIMEOUT_SEC  1
 #define TIMEOUT_USEC 0
 
 #define SECOND_PAUSE_BT_PINGS 1
@@ -39,35 +40,35 @@
 #define RECEIVE 1
 #define TIMEOUT 2
 
-typedef struct time_stats
-{
-    double min;
-    double max;
-    double average;
+// typedef struct time_stats
+// {
+//     double min;
+//     double max;
+//     double average;
 
-    double total;
-    double delta;
-    double stddev;
+//     double total;
+//     double delta;
+//     double stddev;
 
-} t_time_stats;
+// } t_time_stats;
 
-enum OPT_ARGS
-{
-    OPT_VERBOSE  = 1 << 0,
-    OPT_TTL      = 1 << 1,
-    OPT_INTERVAL = 1 << 2,
-    OPT_COUNT    = 1 << 3,
-    OPT_LINGER   = 1 << 4,
-    OPT_TIMEOUT  = 1 << 5
-};
+// enum OPT_ARGS
+// {
+//     OPT_VERBOSE  = 1 << 0,
+//     OPT_TTL      = 1 << 1,
+//     OPT_INTERVAL = 1 << 2,
+//     OPT_COUNT    = 1 << 3,
+//     OPT_LINGER   = 1 << 4,
+//     OPT_TIMEOUT  = 1 << 5
+// };
 
-typedef struct ping_counter
-{
-    int transmitted;
-    int received;
-    int dup;
-    int lost;
-} t_ping_counter;
+// typedef struct ping_counter
+// {
+//     int transmitted;
+//     int received;
+//     int dup;
+//     int lost;
+// } t_ping_counter;
 
 typedef struct data_icmp
 {
@@ -81,31 +82,45 @@ typedef struct icmp_packet
     char payload[PAYLOAD_SIZE];
 } t_icmp_packet;
 
+typedef struct hop_packets
+{
+    char ips[3][INET_ADDRSTRLEN];
+    char hosts[3][1024];
+    double rtt[3];
+    struct timeval send_time[3];
+} t_hop_packets;
+
 typedef struct traceroute_client
 {
     struct sockaddr_in sockaddr;
     t_icmp_packet*     packets;
     fd_set             read_fds;
     
-    char ips[3][INET_ADDRSTRLEN];
-    double rtt[3];
+    t_hop_packets         hop_packet;
+    
+    int current_hop;
+    unsigned char recv_buff[1024];
+    struct timeval now;
     
     char* name;
     int   fd;
     char* ip;
     int   seq;
     int   status;
+    bool target_reached;
 } t_traceroute_client;
 
 /// * PARSING AND SETUP FUNCTIONS
 int parse_args(int ac, char** av);
 int create_client(t_traceroute_client* client, char* address);
 
-int build_echo_request(t_traceroute_client* client, t_icmp_packet* packet);
+void build_echo_request(t_traceroute_client* client, t_icmp_packet* packet);
 int icmp_checksum(unsigned char* buff, int len);
 
 // /// * MAIN LOOP AND HANDLERS
 void  main_loop(t_traceroute_client* client);
+void  hop_loop(t_traceroute_client* client);
+void recv_loop(t_traceroute_client* client, int attempt);
 int send_message(t_traceroute_client* client, struct sockaddr_in sockaddr);
 // float verify_response_and_print(t_traceroute_client* client,
 //                                 unsigned char* buff,
@@ -130,6 +145,5 @@ int send_message(t_traceroute_client* client, struct sockaddr_in sockaddr);
 // struct timeval sub_timestamp(struct timeval* time1, struct timeval* time2);
 
 // /// * EXIT AND HELPERS
-void print_start(t_traceroute_client* client);
 void exit_program(t_traceroute_client* client);
-void print_helper();
+void print_start(t_traceroute_client client);

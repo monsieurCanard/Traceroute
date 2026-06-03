@@ -8,11 +8,12 @@ SRC = $(SRC_DIR)main.c \
 			$(SRC_DIR)parser.c \
 			$(SRC_DIR)client.c \
 			$(SRC_DIR)builder.c \
-			$(SRC_DIR)loop.c \
+			$(SRC_DIR)main_loop.c \
+			$(SRC_DIR)hop_loop.c \
+			$(SRC_DIR)recv_loop.c \
 			$(SRC_DIR)sender.c \
 			$(SRC_DIR)print_start.c \
-			$(SRC_DIR)exit.c \
-			$(SRC_DIR)helper.c
+			$(SRC_DIR)exit.c
 
 OBJ_DIR = obj/
 
