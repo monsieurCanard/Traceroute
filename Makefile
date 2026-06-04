@@ -1,6 +1,6 @@
 NAME = traceroute
 
-CC_FLAGS = -fsanitize=address -g3 -Wall -Wextra -Werror -I includes/
+CC_FLAGS = -fsanitize=address -g3 -Wall -Wextra -Werror -I includes/ -MMD 
 
 SRC_DIR = src/
 
@@ -11,8 +11,11 @@ SRC = $(SRC_DIR)main.c \
 			$(SRC_DIR)main_loop.c \
 			$(SRC_DIR)hop_loop.c \
 			$(SRC_DIR)recv_loop.c \
+			$(SRC_DIR)verifier.c \
+			$(SRC_DIR)getter.c \
 			$(SRC_DIR)sender.c \
 			$(SRC_DIR)print_start.c \
+			$(SRC_DIR)utils.c \
 			$(SRC_DIR)exit.c
 
 OBJ_DIR = obj/

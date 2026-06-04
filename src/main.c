@@ -24,6 +24,7 @@ int main(int ac, char** av)
 		client.status = EXIT_FAILURE;
 		exit_program(&client);
 	}
+	
 	print_start(client);
 	main_loop(&client);
 	

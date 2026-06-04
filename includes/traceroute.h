@@ -1,3 +1,6 @@
+#ifndef TRACEROUTE_H
+#define TRACEROUTE_H
+
 #include <arpa/inet.h>
 #include <bits/types/struct_timeval.h>
 #include <errno.h>
@@ -17,133 +20,135 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <netdb.h>
 
-
+/** 
+ * Constants and Configurations 
+ */
 #define PAYLOAD_SIZE 32
-#define MAX_HOPS 30
+#define MAX_HOPS 100
 #define MAX_ATTEMPTS 3
 
-
-
-#define RESEND 1
-
-#define TIMEOUT_SEC  1
+#define TIMEOUT_SEC 1
 #define TIMEOUT_USEC 0
 
-#define SECOND_PAUSE_BT_PINGS 1
+#define MSG_TIMEOUT -1
 
-#define ERROR   -1
+#define ERROR -1
 #define SUCCESS 0
 
-#define SEND    0
-#define RECEIVE 1
-#define TIMEOUT 2
-
-// typedef struct time_stats
-// {
-//     double min;
-//     double max;
-//     double average;
-
-//     double total;
-//     double delta;
-//     double stddev;
-
-// } t_time_stats;
-
-// enum OPT_ARGS
-// {
-//     OPT_VERBOSE  = 1 << 0,
-//     OPT_TTL      = 1 << 1,
-//     OPT_INTERVAL = 1 << 2,
-//     OPT_COUNT    = 1 << 3,
-//     OPT_LINGER   = 1 << 4,
-//     OPT_TIMEOUT  = 1 << 5
-// };
-
-// typedef struct ping_counter
-// {
-//     int transmitted;
-//     int received;
-//     int dup;
-//     int lost;
-// } t_ping_counter;
-
+/**
+ * @struct data_icmp
+ * @brief Represents an ICMP packet containing the IP header and ICMP data.
+ */
 typedef struct data_icmp
 {
     struct iphdr*   ip_header;
     struct icmphdr* data;
 } t_data_icmp;
 
+/**
+ * @struct icmp_packet
+ * @brief Represents custom ICMP packet structure containing the header and payload.
+ */
 typedef struct icmp_packet
 {
-    struct icmphdr hdr;
-    char payload[PAYLOAD_SIZE];
+    struct icmphdr hdr;             ///< Standard ICMP header
+    char payload[PAYLOAD_SIZE];     ///< Packet payload padded with a specific size
 } t_icmp_packet;
 
+/**
+ * @struct hop_packets
+ * @brief Stores information regarding responses for each hop during traceroute.
+ */
 typedef struct hop_packets
 {
-    char ips[3][INET_ADDRSTRLEN];
-    char hosts[3][1024];
-    double rtt[3];
-    struct timeval send_time[3];
+    struct sockaddr_in src_addr[3];
+    char ips[3][INET_ADDRSTRLEN];   ///< IP addresses for each attempt
+    char hosts[3][1024];            ///< Resolved hostnames for each attempt
+    double rtt[3];                  ///< Round trip time for each attempt (ms)
+    struct timeval send_time[3];    ///< Timestamps of when packets were sent
 } t_hop_packets;
 
+/**
+ * @struct traceroute_client
+ * @brief Main state structure for the traceroute client, holding socket, target, and execution state.
+ */
 typedef struct traceroute_client
 {
-    struct sockaddr_in sockaddr;
-    t_icmp_packet*     packets;
-    fd_set             read_fds;
+    struct sockaddr_in sockaddr;    ///< Target socket address
+    t_icmp_packet*     packets;     ///< Pointer to list of packets to send
+    fd_set             read_fds;    ///< File descriptor set for `select()`
     
-    t_hop_packets         hop_packet;
+    t_hop_packets      hop_packet[MAX_HOPS];  ///< State data for the current hop
     
-    int current_hop;
-    unsigned char recv_buff[1024];
-    struct timeval now;
+    int current_hop;                ///< TTL/current hop index starting from 1
+    unsigned char recv_buff[1024];  ///< Buffer for receiving response packets
+    struct timeval now;             ///< Current time reference
     
-    char* name;
-    int   fd;
-    char* ip;
-    int   seq;
-    int   status;
-    bool target_reached;
+    char* name;                     ///< Initial hostname or command-line target arg
+    int   fd;                       ///< Raw socket file descriptor
+    char* ip;                       ///< Resolved IP address string
+    int   seq;                      ///< Current sequence number for ICMP packets
+    int   status;                   ///< Client execution status or error code
+    bool  target_reached;           ///< Flag to stop traceroute when destination is reached
 } t_traceroute_client;
 
-/// * PARSING AND SETUP FUNCTIONS
+/**
+ * @name Parser Functions
+ */
 int parse_args(int ac, char** av);
+
+/**
+ * @name Core Traceroute Logic
+ * @brief Client initialization, network interaction, and loops
+ */
+
+/**
+ * @brief Extract information like IP and hostname from the received packet.
+ */
+void get_info_from_response(t_traceroute_client* client, struct sockaddr_in src_addr, int attempt);
+
+/**
+ * @brief Initialize traceroute client socket and target resolution.
+ */
 int create_client(t_traceroute_client* client, char* address);
 
+/**
+ * @brief Prepare and populate an ICMP Echo Request packet.
+ */
 void build_echo_request(t_traceroute_client* client, t_icmp_packet* packet);
+
+/**
+ * @brief Calculate the ICMP checksum for a packet array of bytes.
+ */
 int icmp_checksum(unsigned char* buff, int len);
 
-// /// * MAIN LOOP AND HANDLERS
-void  main_loop(t_traceroute_client* client);
-void  hop_loop(t_traceroute_client* client);
+/**
+ * @name Main Loops
+ */
+void main_loop(t_traceroute_client* client);
+void hop_loop(t_traceroute_client* client);
 void recv_loop(t_traceroute_client* client, int attempt);
+
+/**
+ * @brief Send an ICMP packet to the specified sockaddr.
+ */
 int send_message(t_traceroute_client* client, struct sockaddr_in sockaddr);
-// float verify_response_and_print(t_traceroute_client* client,
-//                                 unsigned char* buff,
-//                                 struct timeval recv_time);
 
-// int time_checker(t_traceroute_client*  client,
-//                  struct timeval* start_time,
-//                  struct timeval* now,
-//                  struct timeval* send_time);
+/**
+ * @brief Verify that the received socket response targets our ongoing traceroute logic.
+ */
+int verify_response(t_traceroute_client* client, struct sockaddr_in src_addr);
 
-// bool resend_packet(t_traceroute_client* client, struct timeval* now, struct timeval* time);
-// void handle_error_icmp(t_data_icmp icmp, t_traceroute_client* client);
-// void update_client_time_stats(t_time_stats* time_stats, double new_rtt, int count);
-
-// /// * PRINTING FUNCTIONS
-// void print_ping_final_stats(t_ping_client* client, double success_rate);
-// void print_ping_line(t_data_icmp icmp, float rtt, int ttl, bool dup);
-// void print_start_ping(t_ping_client* client);
-
-// /// * TIMESTAMP FUNCTIONS
-// struct timeval add_timestamp(struct timeval* time1, struct timeval* time2);
-// struct timeval sub_timestamp(struct timeval* time1, struct timeval* time2);
-
-// /// * EXIT AND HELPERS
+/**
+ * @name Lifecycle Functions
+ */
 void exit_program(t_traceroute_client* client);
 void print_start(t_traceroute_client client);
+
+/**
+ * @brief Verify if the time elapsed since sending a packet exceeds the defined timeout.
+ */
+bool msg_is_timeout(struct timeval send_time, struct timeval now);
+
+#endif /* TRACEROUTE_H */

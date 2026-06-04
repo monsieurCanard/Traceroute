@@ -6,7 +6,7 @@ void hop_loop(t_traceroute_client* client)
 {
 	for(int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
 	{
-		gettimeofday(&client->hop_packet.send_time[attempt], NULL);
+		gettimeofday(&client->hop_packet[client->current_hop].send_time[attempt], NULL);
 
 		if (send_message(client, client->sockaddr) == ERROR)
 		{
